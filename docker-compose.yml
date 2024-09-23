@@ -1,0 +1,92 @@
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: 'yes'
+    # networks:
+    #   - kafka_network
+
+  kafka:
+    container_name: kafka
+    image: apache/kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - ${KAFKA_PLAINTEXT_PORT}:9092
+      - ${KAFKA_CONTROLLER_PORT}:9093
+    environment:
+      KAFKA_NODE_ID: ${KAFKA_NODE_ID}
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: DOCKER://kafka:29092,CONTROLLER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:9092 ## Cannot use Env it will break
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT ## Cannot use Env it will break 
+      KAFKA_CONTROLLER_QUORUM_VOTERS: ${KAFKA_CONTROLLER_QUORUM_VOTERS}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,DOCKER://KAFKA:29092 ## Cannot use Env it will break
+      KAFKA_PROCESS_ROLES: ${KAFKA_PROCESS_ROLES}
+      KAFKA_LOG_DIRS: ${KAFKA_LOG_DIRS}
+      KAFKA_CONTROLLER_LISTENER_NAMES: ${KAFKA_CONTROLLER_LISTENER_NAMES}
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: ${KAFKA_TRANSACTION_STATE_LOG_MIN_ISR}
+      KAFKA_INTER_BROKER_LISTENER_NAME: ${KAFKA_INTER_BROKER_LISTENER_NAME}
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    # networks:
+    #   - kafka_network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/9092"]
+      interval: 10s
+      timeout: 15s
+      retries: 10
+      start_period: 30s
+
+  kowl:
+    image: quay.io/cloudhut/kowl:latest
+    container_name: kowl
+    ports:
+      - "8083:8080"
+    environment:
+      KAFKA_BROKERS: "kafka:29092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    # networks:
+    #   - kafka_network
+
+  postgresql:
+    image: postgres:16.2-alpine3.18
+    container_name: postgres_kafka
+    environment:
+     - POSTGRES_USER=${POSTGRES_USER}
+     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+     - ${POSTGRES_PORT}:5432
+    volumes:
+     - postgres-data:/var/lib/postgresql/data
+     - postgres-init:/docker-entrypoint-initdb.d
+
+volumes:
+  postgres-data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${POSTGRES_DATA_VOLUME}
+  postgres-init:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${POSTGRES_INIT_VOLUME}
+  kafka-data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${KAFKA_DATA_VOLUME}
+# networks:
+#   kafka_network:
+#     driver: bridge

@@ -1,0 +1,1 @@
+from config.enviroment import database_url, data_folder, database_bancos_db
