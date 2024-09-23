@@ -1,7 +1,19 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.types import StructType, StringType, IntegerType
-from config.enviroment import data_folder, bootstrap_servers, checkpoints_path,database_host, database_port, database_db, database_user, database_password, database_bancos_table
+from config.enviroment import (
+    data_folder,
+    bootstrap_servers,
+    checkpoints_path,
+    database_host,
+    database_port,
+    database_db,
+    database_user,
+    database_password,
+    database_bancos_table)
 
 
 packages = [
@@ -87,5 +99,6 @@ def main():
         .start()
 
     query.awaitTermination()
+    
 if __name__ == "__main__":
     main()
