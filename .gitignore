@@ -1,2 +1,4 @@
 __pycache__
 .env
+kafka_logs
+postgres
