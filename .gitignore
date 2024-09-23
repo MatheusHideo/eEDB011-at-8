@@ -2,3 +2,5 @@ __pycache__
 .env
 kafka_logs
 postgres
+data/delivery/*
+data/checkpoints/*
