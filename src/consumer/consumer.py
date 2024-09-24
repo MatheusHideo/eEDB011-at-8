@@ -33,8 +33,8 @@ def line_execution(df, epoch_id):
     cnpj = df_renamed.select("cnpj").first()[0]
     bancos_df = read_sql(cnpj)
     if not bancos_df.isEmpty():
-        rich = df_renamed.join(bancos_df, on=["cnpj"], how="inner")
-        save_json(rich, epoch_id)
+        enrich = df_renamed.join(bancos_df, on=["cnpj"], how="inner")
+        save_json(enrich, epoch_id)
 
 def save_json(df, epoch):
     """Function to save json"""
